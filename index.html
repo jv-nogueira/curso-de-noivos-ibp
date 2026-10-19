@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Preencha as respostas do Curso de Noivos e baixe o documento para encaminhar aos conselheiros."
+    />
+    <meta name="theme-color" content="#294438" />
+    <title>Curso de Noivos | Igreja Batista do Povo</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/docx-preview@0.3.6/dist/docx-preview.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="hero">
+        <p class="eyebrow">Igreja Batista do Povo · Vila São José</p>
+        <h1>Curso de Noivos</h1>
+        <p class="subtitle">
+          Responda à lição, confira a prévia e baixe o documento para encaminhar
+          aos seus conselheiros.
+        </p>
+      </header>
+
+      <section class="privacy-note" aria-labelledby="privacy-title">
+        <span class="privacy-icon" aria-hidden="true">✓</span>
+        <div>
+          <h2 id="privacy-title">Suas respostas ficam com você</h2>
+          <p>
+            O formulário não pede seus dados de identificação. As respostas são
+            processadas neste navegador, não são enviadas nem salvas pelo site.
+            O arquivo só é criado quando você escolhe baixá-lo. Algumas perguntas
+            do modelo podem mencionar familiares; responda apenas o que se sentir
+            confortável em compartilhar.
+          </p>
+        </div>
+      </section>
+
+      <section class="lesson-picker card" aria-labelledby="lesson-heading">
+        <div>
+          <p class="section-kicker">Comece por aqui</p>
+          <h2 id="lesson-heading">Escolha a lição</h2>
+        </div>
+        <label class="field" for="lesson-select">
+          Lição disponível
+          <select id="lesson-select" name="lesson" aria-describedby="lesson-help">
+            <option value="aula1">Lição 1 — Herança Familiar</option>
+          </select>
+        </label>
+        <p id="lesson-help" class="help-text">
+          As outras lições serão disponibilizadas quando seus modelos forem adicionados.
+        </p>
+      </section>
+
+      <form id="questionnaire" class="questionnaire" autocomplete="off">
+        <div id="questions"></div>
+
+        <div class="form-actions card">
+          <p id="form-status" class="status-message" role="status" aria-live="polite"></p>
+          <button id="preview-button" class="button button-primary" type="button">
+            Ver prévia das respostas
+          </button>
+        </div>
+      </form>
+
+      <dialog id="preview-dialog" class="preview-dialog" aria-labelledby="preview-heading">
+        <div class="preview-header">
+          <div>
+            <p class="section-kicker">Documento preenchido</p>
+            <h2 id="preview-heading">Prévia em PDF</h2>
+            <p class="help-text">
+              Confira a aparência do documento. Feche esta janela para voltar ao formulário e editar.
+            </p>
+          </div>
+          <button id="close-preview-button" class="close-button" type="button" aria-label="Fechar prévia">×</button>
+        </div>
+        <div id="preview-content" class="preview-content" aria-live="polite">
+          <p id="preview-status" class="preview-status" role="status">Preparando a prévia do documento…</p>
+          <div id="pdf-pages" class="pdf-pages"></div>
+        </div>
+        <div class="preview-actions">
+          <p id="download-status" class="status-message" role="status" aria-live="polite"></p>
+          <button id="download-button" class="button button-primary" type="button">
+            Baixar documento Word
+          </button>
+        </div>
+      </dialog>
+
+      <footer>
+        <span>Curso de Noivos · Igreja Batista do Povo – Vila São José</span>
+        <span>O documento é gerado no seu navegador.</span>
+      </footer>
+    </main>
+  </body>
+</html>
