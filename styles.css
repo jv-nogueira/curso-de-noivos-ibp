@@ -113,7 +113,27 @@ input[type="text"], input[type="number"], select, textarea {
   width: 100%;
 }
 
-textarea { line-height: 1.5; min-height: 94px; resize: vertical; }
+textarea {
+  line-height: 1.5;
+  min-height: 50px;
+  min-width: 100%;
+  resize: vertical;
+  width: 100%;
+}
+
+.field input[type="text"],
+.field input[type="number"],
+.field select,
+.field textarea {
+  min-height: 50px;
+  height: 50px;
+}
+
+.field textarea {
+  min-height: 50px;
+  height: 50px;
+}
+
 input:focus, select:focus, textarea:focus {
   border-color: var(--primary);
   box-shadow: 0 0 0 3px rgba(49, 91, 71, .12);
@@ -176,10 +196,20 @@ input:focus, select:focus, textarea:focus {
 .form-actions {
   align-items: center;
   display: flex;
-  gap: 16px;
-  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: space-between;
   margin-top: 20px;
   padding: 18px 22px;
+}
+
+.action-group {
+  align-items: center;
+  display: flex;
+  flex: 1 1 auto;
+  gap: 12px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
 }
 
 .button {
@@ -190,6 +220,7 @@ input:focus, select:focus, textarea:focus {
   font-weight: 750;
   min-height: 46px;
   padding: 0 18px;
+  white-space: nowrap;
 }
 
 .button-primary { background: var(--primary); color: #fff; }
@@ -214,7 +245,7 @@ input:focus, select:focus, textarea:focus {
 
 .preview-dialog[open] { display: flex; flex-direction: column; }
 .preview-dialog::backdrop { background: rgba(16, 24, 20, .72); }
-.preview-header { align-items: flex-start; border-bottom: 1px solid var(--line); display: flex; flex: 0 0 auto; gap: 20px; justify-content: space-between; padding: 20px 23px; }
+.preview-header { align-items: center; border-bottom: 1px solid var(--line); display: flex; flex: 0 0 auto; justify-content: flex-end; padding: 14px 18px; }
 .close-button { background: transparent; border: 0; border-radius: 7px; color: var(--muted); cursor: pointer; font-size: 1.9rem; line-height: 1; padding: 0 6px; }
 .close-button:hover { background: var(--accent); color: var(--primary-dark); }
 .preview-content { border-top: 1px solid var(--line); margin-top: 20px; padding-top: 8px; }
@@ -242,7 +273,21 @@ footer {
   .app-shell { padding-top: 28px; }
   .lesson-picker, .question-card { padding: 18px; }
   .temperament-grid { grid-template-columns: 1fr; }
+  .field input[type="text"],
+  .field input[type="number"],
+  .field select,
+  .field textarea {
+    min-height: 54px;
+  }
   .form-actions, footer { align-items: stretch; flex-direction: column; }
+  .form-actions {
+    justify-content: stretch;
+    gap: 10px;
+  }
+  .action-group {
+    width: 100%;
+  }
+  .button,
   .form-actions .button { width: 100%; }
   .preview-dialog { height: 92vh; max-height: 92vh; }
   .preview-header { padding: 17px; }

@@ -61,33 +61,26 @@
         <div id="questions"></div>
 
         <div class="form-actions card">
+          <div class="action-group">
+            <button id="preview-button" class="button button-primary" type="button">
+              Ver prévia das respostas
+            </button>
+            <button id="download-button" class="button button-primary" type="button">
+              Gerar PDF
+            </button>
+          </div>
           <p id="form-status" class="status-message" role="status" aria-live="polite"></p>
-          <button id="preview-button" class="button button-primary" type="button">
-            Ver prévia das respostas
-          </button>
+          <p id="download-status" class="status-message" role="status" aria-live="polite"></p>
         </div>
       </form>
 
-      <dialog id="preview-dialog" class="preview-dialog" aria-labelledby="preview-heading">
+      <dialog id="preview-dialog" class="preview-dialog" aria-label="Prévia do documento preenchido">
         <div class="preview-header">
-          <div>
-            <p class="section-kicker">Documento preenchido</p>
-            <h2 id="preview-heading">Prévia em PDF</h2>
-            <p class="help-text">
-              Confira a aparência do documento. Feche esta janela para voltar ao formulário e editar.
-            </p>
-          </div>
           <button id="close-preview-button" class="close-button" type="button" aria-label="Fechar prévia">×</button>
         </div>
         <div id="preview-content" class="preview-content" aria-live="polite">
           <p id="preview-status" class="preview-status" role="status">Preparando a prévia do documento…</p>
           <div id="pdf-pages" class="pdf-pages"></div>
-        </div>
-        <div class="preview-actions">
-          <p id="download-status" class="status-message" role="status" aria-live="polite"></p>
-          <button id="download-button" class="button button-primary" type="button">
-            Baixar documento Word
-          </button>
         </div>
       </dialog>
 

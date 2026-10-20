@@ -1,7 +1,7 @@
 # Curso de Noivos — Igreja Batista do Povo, Vila São José
 
 Formulário web estático para preencher as respostas das lições, revisar uma
-prévia e baixar o documento Word para encaminhar aos conselheiros.
+prévia e baixar o documento PDF para encaminhar aos conselheiros.
 
 ## Privacidade
 
@@ -9,8 +9,9 @@ prévia e baixar o documento Word para encaminhar aos conselheiros.
 - As respostas são processadas no navegador e não são enviadas para um backend
   nem salvas pelo site.
 - Não há armazenamento automático, envio por email ou serviço de feedback.
-- O arquivo Word é preenchido no navegador, convertido para PDF para a prévia e
-  baixado somente quando a pessoa pede.
+- O modelo Word é preenchido e convertido para PDF no navegador. A prévia usa
+  PDF quando disponível e pode mostrar o Word preenchido como alternativa; o
+  PDF é baixado somente quando a pessoa pede.
 - A pergunta 1 do modelo solicita nomes de familiares. O aviso do formulário
   informa que a pessoa pode responder apenas o que se sentir confortável em
   compartilhar.
@@ -27,9 +28,10 @@ com Python instalado:
 py -m http.server 8000
 ```
 
-Depois, acesse `http://localhost:8000` na pasta do projeto. O arquivo Word é
-gerado localmente; não há chamadas para um backend. A biblioteca JSZip é carregada para preencher o `.docx`; docx-preview, html2pdf
-e PDF.js renderizam o documento convertido em PDF, tudo no navegador.
+Depois, acesse `http://localhost:8000` na pasta do projeto. O PDF é gerado
+localmente; não há chamadas para um backend. A biblioteca JSZip é carregada
+para preencher o `.docx`; docx-preview, html2pdf e PDF.js renderizam o documento
+convertido em PDF, tudo no navegador.
 
 ## Publicar no GitHub Pages
 

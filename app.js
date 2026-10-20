@@ -3,7 +3,7 @@ const LESSONS = [
     id: "aula1",
     title: "Aula 1: Herança Familiar",
     file: "modelos/Aula1-HerancaFamiliar.docx",
-    downloadName: "Aula-1-Heranca-Familiar.docx",
+    downloadName: "Aula-1-Heranca-Familiar.pdf",
   },
 ];
 
@@ -352,7 +352,7 @@ function replaceDocumentMarkers(xmlText, answerData) {
 
   const wordNamespace = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
   const paragraphs = Array.from(xml.getElementsByTagNameNS(wordNamespace, "p"));
-  const markerPattern = /\[([A-Za-z0-9_.]+)\]|\(\s*(R[A-Za-z0-9_.]+)\s*\)/g;
+  const markerPattern = /\[([A-Za-z0-9_.]+)\](?:\s*\(\s*Sim\s*\/\s*Não\s*\))?|\(\s*(R[A-Za-z0-9_.]+)\s*\)/g;
   paragraphs.forEach((paragraph) => {
     const textNodes = Array.from(paragraph.getElementsByTagNameNS(wordNamespace, "t"));
     const paragraphText = textNodes.map((node) => node.textContent).join("");
@@ -370,7 +370,18 @@ function replaceDocumentMarkers(xmlText, answerData) {
         if (!Object.prototype.hasOwnProperty.call(answerData.textAnswers, marker)) {
           throw new Error(`A resposta ${marker} não está associada a um campo do formulário.`);
         }
-        replacement = (answerData.textAnswers[marker] || "").replace(/\r\n?|\n/g, " ");
+        const radioField = questions
+          .flatMap((question) => question.fields || [])
+          .find((field) => field.ref === marker && field.type === "radio");
+        if (radioField) {
+          replacement = radioField.options.map((option) => {
+            const choice = typeof option === "string" ? { label: option, value: option } : option;
+            const value = choice.value || choice.label;
+            return `(${answerData.textAnswers[marker] === value ? "X" : " "}) ${choice.label}`;
+          }).join(" ");
+        } else {
+          replacement = (answerData.textAnswers[marker] || "").replace(/\r\n?|\n/g, " ");
+        }
       }
       replaceRange(textNodes, match.index, match.index + match[0].length, replacement);
     });
@@ -413,17 +424,21 @@ function requirePreviewLibraries() {
   if (typeof window.html2pdf !== "function") {
     throw new Error("A biblioteca para converter o documento em PDF não carregou. Verifique sua conexão e tente novamente.");
   }
-  if (!window.pdfjsLib) {
-    throw new Error("A biblioteca para exibir o PDF não carregou. Verifique sua conexão e tente novamente.");
-  }
 }
 
 async function convertDocumentToPdf(docxBlob) {
   requirePreviewLibraries();
   const source = document.createElement("div");
   const styleContainer = document.createElement("div");
+  const previewWasOpen = previewDialog.open;
+  const previousScrollPosition = window.scrollY;
   source.className = "docx-conversion-source";
-  pdfPages.replaceChildren(source);
+  if (!previewWasOpen) {
+    previewStatus.textContent = "Gerando o PDF…";
+    previewDialog.showModal();
+  }
+  window.scrollTo(0, 0);
+  document.body.prepend(source);
   document.head.append(styleContainer);
 
   try {
@@ -458,13 +473,36 @@ async function convertDocumentToPdf(docxBlob) {
         jsPDF: { unit: "pt", format: "a4", orientation: "portrait" },
         pagebreak: { mode: ["css", "legacy"], avoid: ["table", "tr", "img"] },
       })
-      .from(source)
-      .toPdf();
+      .from(source);
+    await worker.toCanvas();
+    const canvas = await worker.get("canvas");
+    const context = canvas.getContext("2d", { willReadFrequently: true });
+    if (!context) throw new Error("O navegador não conseguiu preparar o conteúdo do PDF.");
+    const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
+    let contentPixelCount = 0;
+    for (let index = 0; index < pixels.length; index += 16) {
+      if (pixels[index] < 240 || pixels[index + 1] < 240 || pixels[index + 2] < 240) {
+        contentPixelCount += 1;
+      }
+    }
+    if (contentPixelCount < 20) {
+      throw new Error("O documento ficou vazio durante a conversão. Tente gerar o PDF novamente.");
+    }
+    await worker.toPdf();
     const pdf = await worker.get("pdf");
-    return new Uint8Array(pdf.output("arraybuffer"));
+    const pdfBytes = pdf.output("arraybuffer");
+    if (pdfBytes.byteLength === 0) {
+      throw new Error("O navegador não conseguiu criar o arquivo PDF. Tente novamente.");
+    }
+    return new Uint8Array(pdfBytes);
   } finally {
     source.remove();
     styleContainer.remove();
+    if (!previewWasOpen) {
+      previewStatus.textContent = "";
+      previewDialog.close();
+    }
+    window.scrollTo(0, previousScrollPosition);
   }
 }
 
@@ -490,6 +528,9 @@ async function renderWordPreview(docxBlob) {
 }
 
 async function renderPdfPreview(bytes, docxBlob) {
+  if (!window.pdfjsLib) {
+    throw new Error("A biblioteca para exibir o PDF não carregou. Verifique sua conexão e tente novamente.");
+  }
   pdfPages.replaceChildren();
   const loadingTask = window.pdfjsLib.getDocument({ data: bytes, disableWorker: true });
   const pdf = await loadingTask.promise;
@@ -524,8 +565,6 @@ async function renderPdfPreview(bytes, docxBlob) {
 
   if (!hasVisiblePage) {
     await renderWordPreview(docxBlob);
-    previewStatus.textContent =
-      "Este navegador não conseguiu exibir o PDF. Mostrando a prévia do Word preenchido; o download continua disponível.";
     return false;
   }
   return true;
@@ -543,18 +582,31 @@ async function prepareDocumentPreview() {
   if (!previewDialog.open) previewDialog.showModal();
 
   try {
-    const documentResult = await createFilledDocument(buildAnswerData());
-    const pdfBytes = await convertDocumentToPdf(documentResult.blob);
-    previewStatus.textContent = "Abrindo a prévia do PDF…";
-    await renderPdfPreview(pdfBytes, documentResult.blob);
-    preparedDocument = documentResult;
-    if (!previewStatus.textContent.startsWith("Este navegador")) {
-      previewStatus.textContent = "";
+    const answerData = buildAnswerData();
+    const answerSignature = JSON.stringify({
+      lesson: lessonSelect.value,
+      answers: answerData,
+    });
+    const documentResult = await createFilledDocument(answerData);
+    preparedDocument = { ...documentResult, pdfBlob: null, answerSignature };
+
+    try {
+      const pdfBytes = await convertDocumentToPdf(documentResult.blob);
+      preparedDocument.pdfBlob = new Blob([pdfBytes], { type: "application/pdf" });
+      previewStatus.textContent = "Abrindo a prévia do PDF…";
+      try {
+        await renderPdfPreview(pdfBytes, documentResult.blob);
+      } catch (error) {
+        await renderWordPreview(documentResult.blob);
+      }
+    } catch (error) {
+      await renderWordPreview(documentResult.blob);
     }
+    previewStatus.textContent = "";
   } catch (error) {
     pdfPages.replaceChildren();
     preparedDocument = null;
-    previewStatus.textContent = `Não foi possível preparar a prévia em PDF: ${error.message}`;
+    previewStatus.textContent = `Não foi possível preparar a prévia: ${error.message}`;
   } finally {
     previewButton.disabled = false;
   }
@@ -572,24 +624,38 @@ form.addEventListener("change", (event) => {
 });
 
 downloadButton.addEventListener("click", async () => {
-  if (!preparedDocument) {
-    downloadStatus.textContent = "Aguarde a prévia em PDF terminar de carregar antes de baixar.";
-    return;
-  }
   downloadButton.disabled = true;
+  downloadStatus.textContent = "Gerando o PDF…";
+  downloadStatus.style.color = "";
   try {
-    const url = URL.createObjectURL(preparedDocument.blob);
+    const answerData = buildAnswerData();
+    const answerSignature = JSON.stringify({
+      lesson: lessonSelect.value,
+      answers: answerData,
+    });
+    let pdfBlob;
+    let lesson;
+    if (preparedDocument?.answerSignature === answerSignature && preparedDocument.pdfBlob) {
+      ({ pdfBlob, lesson } = preparedDocument);
+    } else {
+      const documentResult = await createFilledDocument(answerData);
+      const pdfBytes = await convertDocumentToPdf(documentResult.blob);
+      pdfBlob = new Blob([pdfBytes], { type: "application/pdf" });
+      lesson = documentResult.lesson;
+    }
+
+    const url = URL.createObjectURL(pdfBlob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = preparedDocument.lesson.downloadName;
+    link.download = lesson.downloadName;
     document.body.append(link);
     link.click();
     link.remove();
     window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-    downloadStatus.textContent = "Documento Word baixado. Confira o arquivo antes de encaminhá-lo aos conselheiros.";
+    downloadStatus.textContent = "PDF baixado. Confira o arquivo antes de encaminhá-lo aos conselheiros.";
     downloadStatus.style.color = "var(--primary)";
   } catch (error) {
-    downloadStatus.textContent = `Não foi possível baixar o documento Word: ${error.message}`;
+    downloadStatus.textContent = `Não foi possível gerar o PDF: ${error.message}`;
   } finally {
     downloadButton.disabled = false;
   }
