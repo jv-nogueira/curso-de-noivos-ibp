@@ -627,6 +627,14 @@ function requirePreviewLibraries() {
   }
 }
 
+function preserveTemplateFont(source) {
+  // Os modelos usam Arial 12 pt no Word, mas docx-preview pode aplicar o tamanho do tema.
+  source.querySelectorAll(".docx span").forEach((span) => {
+    span.style.setProperty("font-family", "Arial, sans-serif", "important");
+    span.style.setProperty("font-size", "12pt", "important");
+  });
+}
+
 async function convertDocumentToPdf(docxBlob) {
   requirePreviewLibraries();
   const source = document.createElement("div");
@@ -651,6 +659,7 @@ async function convertDocumentToPdf(docxBlob) {
       breakPages: true,
       useBase64URL: true,
     });
+    preserveTemplateFont(source);
     await document.fonts.ready;
     await Promise.all(Array.from(source.querySelectorAll("img")).map((image) => {
       if (image.complete) return Promise.resolve();
@@ -723,6 +732,7 @@ async function renderWordPreview(docxBlob) {
     breakPages: true,
     useBase64URL: true,
   });
+  preserveTemplateFont(source);
   await document.fonts.ready;
   source.getBoundingClientRect();
   await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
