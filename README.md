@@ -41,8 +41,7 @@ necessário configurar servidor, funções ou segredos.
 
 ## Lições
 
-O modelo disponível atualmente é `modelos/Aula1-HerancaFamiliar.docx`. O
-formulário já cobre as 21 perguntas, suas opções e as 68 características de
-temperamento dessa lição. As próximas lições podem ser adicionadas em `LESSONS`
-e `questions` no `app.js`, associando seus campos às referências dos respectivos
-modelos.
+O formulário disponibiliza as 13 lições. Os documentos Word ficam na pasta
+`modelos/`, e os enunciados, campos e opções de resposta de cada lição são
+configurados em `LESSONS` e `lessonQuestions` no `app.js`. Ao escolher outra
+lição, o formulário é atualizado para corresponder ao respectivo modelo.
