@@ -272,6 +272,11 @@ footer {
 @media (max-width: 640px) {
   .app-shell { padding-top: 28px; }
   .lesson-picker, .question-card { padding: 18px; }
+  .question-card { margin-bottom: 8px; padding: 14px; }
+  .question-heading { gap: 9px; margin-bottom: 10px; }
+  .question-title { line-height: 1.35; }
+  .field-list { gap: 9px; }
+  .field { gap: 4px; }
   .temperament-grid { grid-template-columns: 1fr; }
   .field input[type="text"],
   .field input[type="number"],
