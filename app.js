@@ -909,54 +909,26 @@ shareButton.addEventListener("click", async () => {
     return;
   }
 
-  const answerSignature = JSON.stringify({
-    lesson: lessonSelect.value,
-    answers: buildAnswerData(),
-  });
-  const hasCurrentPdf = preparedDocument?.answerSignature === answerSignature
-    && preparedDocument.pdfBlob;
-
-  if (!hasCurrentPdf) {
-    shareButton.disabled = true;
-    downloadStatus.textContent = "Preparando o PDF. Quando estiver pronto, toque novamente em compartilhar para escolher o WhatsApp.";
-    downloadStatus.style.color = "";
-    try {
-      await getPreparedPdf();
-    } catch (error) {
-      downloadStatus.textContent = `Não foi possível preparar o PDF: ${error.message}`;
-    } finally {
-      shareButton.disabled = false;
-    }
-    return;
-  }
-
-  const file = new File([preparedDocument.pdfBlob], preparedDocument.lesson.downloadName, {
-    type: "application/pdf",
-  });
-  let sharePromise;
+  shareButton.disabled = true;
+  downloadStatus.textContent = "Preparando o PDF para compartilhar…";
+  downloadStatus.style.color = "";
   try {
-    sharePromise = navigator.share({
+    await getPreparedPdf();
+    const file = new File([preparedDocument.pdfBlob], preparedDocument.lesson.downloadName, {
+      type: "application/pdf",
+    });
+    await navigator.share({
       files: [file],
       title: preparedDocument.lesson.title,
       text: "Segue o PDF preenchido do Curso de Noivos.",
     });
-  } catch (error) {
-    downloadStatus.textContent = `Não foi possível abrir o menu de compartilhamento: ${error.message}. Nenhum arquivo foi baixado.`;
-    return;
-  }
-
-  shareButton.disabled = true;
-  downloadStatus.textContent = "Selecione o WhatsApp no menu de compartilhamento.";
-  downloadStatus.style.color = "";
-  try {
-    await sharePromise;
     downloadStatus.textContent = "Compartilhamento concluído.";
     downloadStatus.style.color = "var(--primary)";
   } catch (error) {
     if (error.name === "AbortError") {
       downloadStatus.textContent = "Compartilhamento cancelado. Nenhum arquivo foi baixado.";
     } else {
-      downloadStatus.textContent = `Não foi possível compartilhar o PDF: ${error.message}. Nenhum arquivo foi baixado.`;
+      downloadStatus.textContent = `Não foi possível abrir o compartilhamento: ${error.message}. Nenhum arquivo foi baixado.`;
     }
   } finally {
     shareButton.disabled = false;
