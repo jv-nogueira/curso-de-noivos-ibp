@@ -12,6 +12,10 @@ prévia e baixar o documento PDF para encaminhar aos conselheiros.
 - O modelo Word é preenchido e convertido para PDF no navegador. A prévia usa
   PDF quando disponível e pode mostrar o Word preenchido como alternativa; o
   PDF é baixado somente quando a pessoa pede.
+- Em celulares e navegadores compatíveis, o botão de compartilhamento abre o
+  menu nativo para enviar o PDF, por exemplo pelo WhatsApp. Esse recurso exige
+  uma conexão segura HTTPS; se não estiver disponível, o site informa que não
+  foi possível compartilhar e não baixa o arquivo.
 - A pergunta 1 do modelo solicita nomes de familiares. O aviso do formulário
   informa que a pessoa pode responder apenas o que se sentir confortável em
   compartilhar.

@@ -277,6 +277,7 @@ footer {
   .field input[type="number"],
   .field select,
   .field textarea {
+    height: 54px;
     min-height: 54px;
   }
   .form-actions, footer { align-items: stretch; flex-direction: column; }
@@ -289,9 +290,19 @@ footer {
   }
   .button,
   .form-actions .button { width: 100%; }
-  .preview-dialog { height: 92vh; max-height: 92vh; }
-  .preview-header { padding: 17px; }
-  .preview-dialog .preview-content { padding: 0; }
+  .form-actions .button { white-space: normal; }
+  .preview-dialog {
+    border-radius: 12px;
+    height: calc(100vh - 16px);
+    height: calc(100dvh - 16px);
+    max-height: calc(100vh - 16px);
+    max-height: calc(100dvh - 16px);
+    width: calc(100% - 16px);
+  }
+  .preview-header { min-height: 58px; padding: 5px 9px; }
+  .close-button { min-height: 48px; min-width: 48px; }
+  .preview-dialog .preview-content { padding: 12px 8px; }
+  .pdf-pages { gap: 12px; }
   .preview-actions { align-items: stretch; flex-direction: column; padding: 13px 17px; }
   .preview-actions .button { width: 100%; }
 }

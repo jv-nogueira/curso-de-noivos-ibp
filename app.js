@@ -384,6 +384,7 @@ const downloadStatus = document.querySelector("#download-status");
 const previewButton = document.querySelector("#preview-button");
 const closePreviewButton = document.querySelector("#close-preview-button");
 const downloadButton = document.querySelector("#download-button");
+const shareButton = document.querySelector("#share-button");
 const lessonSelect = document.querySelector("#lesson-select");
 let preparedDocument = null;
 let currentQuestions;
@@ -503,6 +504,34 @@ function buildAnswerData() {
   });
 
   return { textAnswers, optionAnswers };
+}
+
+async function getPreparedPdf() {
+  const answerData = buildAnswerData();
+  const answerSignature = JSON.stringify({
+    lesson: lessonSelect.value,
+    answers: answerData,
+  });
+  if (preparedDocument?.answerSignature === answerSignature && preparedDocument.pdfBlob) {
+    return { pdfBlob: preparedDocument.pdfBlob, lesson: preparedDocument.lesson };
+  }
+
+  const documentResult = await createFilledDocument(answerData);
+  const pdfBytes = await convertDocumentToPdf(documentResult.blob);
+  const pdfBlob = new Blob([pdfBytes], { type: "application/pdf" });
+  preparedDocument = { ...documentResult, pdfBlob, answerSignature };
+  return { pdfBlob, lesson: documentResult.lesson };
+}
+
+function downloadPdf(pdfBlob, lesson) {
+  const url = URL.createObjectURL(pdfBlob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = lesson.downloadName;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 function replaceRange(textNodes, start, end, replacement) {
@@ -682,7 +711,7 @@ async function convertDocumentToPdf(docxBlob) {
       .set({
         margin: 0,
         image: { type: "jpeg", quality: 0.98 },
-        html2canvas: { scale: 1.5, useCORS: true, backgroundColor: "#ffffff" },
+        html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff" },
         jsPDF: { unit: "pt", format: "a4", orientation: "portrait" },
         pagebreak: { mode: ["css", "legacy"], avoid: ["table", "tr", "img"] },
       })
@@ -755,16 +784,23 @@ async function renderPdfPreview(bytes, docxBlob) {
     const page = await pdf.getPage(pageNumber);
     const baseViewport = page.getViewport({ scale: 1 });
     const viewport = page.getViewport({ scale: Math.min(1.5, maxWidth / baseViewport.width) });
+    const outputScale = Math.min(window.devicePixelRatio || 1, 2);
     const canvas = document.createElement("canvas");
     const context = canvas.getContext("2d", { willReadFrequently: true });
     if (!context) throw new Error("O navegador não conseguiu preparar a prévia do PDF.");
-    canvas.width = Math.ceil(viewport.width);
-    canvas.height = Math.ceil(viewport.height);
+    canvas.width = Math.ceil(viewport.width * outputScale);
+    canvas.height = Math.ceil(viewport.height * outputScale);
+    canvas.style.width = `${Math.ceil(viewport.width)}px`;
+    canvas.style.height = `${Math.ceil(viewport.height)}px`;
     const pageFrame = document.createElement("div");
     pageFrame.className = "pdf-page";
     pageFrame.append(canvas);
     pdfPages.append(pageFrame);
-    await page.render({ canvasContext: context, viewport }).promise;
+    await page.render({
+      canvasContext: context,
+      viewport,
+      transform: outputScale === 1 ? null : [outputScale, 0, 0, outputScale, 0, 0],
+    }).promise;
 
     const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
     let contentPixelCount = 0;
@@ -842,36 +878,88 @@ downloadButton.addEventListener("click", async () => {
   downloadStatus.textContent = "Gerando o PDF…";
   downloadStatus.style.color = "";
   try {
-    const answerData = buildAnswerData();
-    const answerSignature = JSON.stringify({
-      lesson: lessonSelect.value,
-      answers: answerData,
-    });
-    let pdfBlob;
-    let lesson;
-    if (preparedDocument?.answerSignature === answerSignature && preparedDocument.pdfBlob) {
-      ({ pdfBlob, lesson } = preparedDocument);
-    } else {
-      const documentResult = await createFilledDocument(answerData);
-      const pdfBytes = await convertDocumentToPdf(documentResult.blob);
-      pdfBlob = new Blob([pdfBytes], { type: "application/pdf" });
-      lesson = documentResult.lesson;
-    }
-
-    const url = URL.createObjectURL(pdfBlob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = lesson.downloadName;
-    document.body.append(link);
-    link.click();
-    link.remove();
-    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    const { pdfBlob, lesson } = await getPreparedPdf();
+    downloadPdf(pdfBlob, lesson);
     downloadStatus.textContent = "PDF baixado. Confira o arquivo antes de encaminhá-lo aos conselheiros.";
     downloadStatus.style.color = "var(--primary)";
   } catch (error) {
     downloadStatus.textContent = `Não foi possível gerar o PDF: ${error.message}`;
   } finally {
     downloadButton.disabled = false;
+  }
+});
+
+shareButton.addEventListener("click", async () => {
+  if (!window.isSecureContext || typeof File !== "function"
+    || typeof navigator.share !== "function" || typeof navigator.canShare !== "function") {
+    downloadStatus.textContent = "Este navegador não permite compartilhar arquivos nesta conexão. Abra o site por um endereço HTTPS; nenhum arquivo foi baixado.";
+    return;
+  }
+
+  let canShareFile;
+  try {
+    canShareFile = navigator.canShare({
+      files: [new File([], "documento.pdf", { type: "application/pdf" })],
+    });
+  } catch {
+    canShareFile = false;
+  }
+  if (!canShareFile) {
+    downloadStatus.textContent = "Este navegador não permite compartilhar arquivos pelo menu nativo. Nenhum arquivo foi baixado.";
+    return;
+  }
+
+  const answerSignature = JSON.stringify({
+    lesson: lessonSelect.value,
+    answers: buildAnswerData(),
+  });
+  const hasCurrentPdf = preparedDocument?.answerSignature === answerSignature
+    && preparedDocument.pdfBlob;
+
+  if (!hasCurrentPdf) {
+    shareButton.disabled = true;
+    downloadStatus.textContent = "Preparando o PDF. Quando estiver pronto, toque novamente em compartilhar para escolher o WhatsApp.";
+    downloadStatus.style.color = "";
+    try {
+      await getPreparedPdf();
+    } catch (error) {
+      downloadStatus.textContent = `Não foi possível preparar o PDF: ${error.message}`;
+    } finally {
+      shareButton.disabled = false;
+    }
+    return;
+  }
+
+  const file = new File([preparedDocument.pdfBlob], preparedDocument.lesson.downloadName, {
+    type: "application/pdf",
+  });
+  let sharePromise;
+  try {
+    sharePromise = navigator.share({
+      files: [file],
+      title: preparedDocument.lesson.title,
+      text: "Segue o PDF preenchido do Curso de Noivos.",
+    });
+  } catch (error) {
+    downloadStatus.textContent = `Não foi possível abrir o menu de compartilhamento: ${error.message}. Nenhum arquivo foi baixado.`;
+    return;
+  }
+
+  shareButton.disabled = true;
+  downloadStatus.textContent = "Selecione o WhatsApp no menu de compartilhamento.";
+  downloadStatus.style.color = "";
+  try {
+    await sharePromise;
+    downloadStatus.textContent = "Compartilhamento concluído.";
+    downloadStatus.style.color = "var(--primary)";
+  } catch (error) {
+    if (error.name === "AbortError") {
+      downloadStatus.textContent = "Compartilhamento cancelado. Nenhum arquivo foi baixado.";
+    } else {
+      downloadStatus.textContent = `Não foi possível compartilhar o PDF: ${error.message}. Nenhum arquivo foi baixado.`;
+    }
+  } finally {
+    shareButton.disabled = false;
   }
 });
 
