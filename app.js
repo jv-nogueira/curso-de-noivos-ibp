@@ -926,7 +926,7 @@ shareButton.addEventListener("click", async () => {
     downloadStatus.style.color = "var(--primary)";
   } catch (error) {
     if (error.name === "AbortError") {
-      downloadStatus.textContent = "Compartilhamento cancelado. Nenhum arquivo foi baixado.";
+      // downloadStatus.textContent = "Compartilhamento cancelado. Nenhum arquivo foi baixado.";
     } else {
       downloadStatus.textContent = `Não foi possível abrir o compartilhamento: ${error.message}. Nenhum arquivo foi baixado.`;
     }
