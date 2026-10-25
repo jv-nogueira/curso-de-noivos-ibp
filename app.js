@@ -632,6 +632,9 @@ function preserveTemplateFont(source) {
   source.querySelectorAll(".docx span").forEach((span) => {
     span.style.setProperty("font-family", "Arial, sans-serif", "important");
     span.style.setProperty("font-size", "12pt", "important");
+    span.style.setProperty("word-break", "normal", "important");
+    span.style.setProperty("overflow-wrap", "normal", "important");
+    span.style.setProperty("hyphens", "none", "important");
   });
 }
 
