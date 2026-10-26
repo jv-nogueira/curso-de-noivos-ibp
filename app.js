@@ -875,12 +875,12 @@ form.addEventListener("change", (event) => {
 
 downloadButton.addEventListener("click", async () => {
   downloadButton.disabled = true;
-  downloadStatus.textContent = "Gerando o PDF…";
+ // downloadStatus.textContent = "Gerando o PDF…";
   downloadStatus.style.color = "";
   try {
     const { pdfBlob, lesson } = await getPreparedPdf();
     downloadPdf(pdfBlob, lesson);
-    downloadStatus.textContent = "PDF baixado. Confira o arquivo antes de encaminhá-lo aos conselheiros.";
+    // downloadStatus.textContent = "PDF baixado. Confira o arquivo antes de encaminhá-lo aos conselheiros.";
     downloadStatus.style.color = "var(--primary)";
   } catch (error) {
     downloadStatus.textContent = `Não foi possível gerar o PDF: ${error.message}`;
@@ -905,12 +905,12 @@ shareButton.addEventListener("click", async () => {
     canShareFile = false;
   }
   if (!canShareFile) {
-    downloadStatus.textContent = "Este navegador não permite compartilhar arquivos pelo menu nativo. Nenhum arquivo foi baixado.";
+    downloadStatus.textContent = "Este navegador não permite compartilhar arquivos.";
     return;
   }
 
   shareButton.disabled = true;
-  downloadStatus.textContent = "Preparando o PDF para compartilhar…";
+  // downloadStatus.textContent = "Preparando o PDF para compartilhar…";
   downloadStatus.style.color = "";
   try {
     await getPreparedPdf();
@@ -922,7 +922,7 @@ shareButton.addEventListener("click", async () => {
       title: preparedDocument.lesson.title,
       text: "Segue o PDF preenchido do Curso de Noivos.",
     });
-    downloadStatus.textContent = "Compartilhamento concluído.";
+    // downloadStatus.textContent = "Compartilhamento concluído.";
     downloadStatus.style.color = "var(--primary)";
   } catch (error) {
     if (error.name === "AbortError") {
