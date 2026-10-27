@@ -476,11 +476,22 @@ function selectedRadioValue(ref) {
 
 function syncConditionalFields() {
   form.querySelectorAll(".conditional").forEach((field) => {
-    field.hidden = selectedRadioValue(field.dataset.parentRef) !== field.dataset.conditionValue;
+    const isVisible = selectedRadioValue(field.dataset.parentRef) === field.dataset.conditionValue;
+    field.hidden = !isVisible;
+    if (!isVisible) {
+      field.querySelectorAll("input, textarea, select").forEach((control) => {
+        if (control.type === "radio" || control.type === "checkbox") {
+          control.checked = false;
+        } else {
+          control.value = "";
+        }
+      });
+    }
   });
 }
 
 function buildAnswerData() {
+  syncConditionalFields();
   const textAnswers = {};
   const optionAnswers = {};
 
@@ -920,7 +931,7 @@ shareButton.addEventListener("click", async () => {
     await navigator.share({
       files: [file],
       title: preparedDocument.lesson.title,
-      text: "Segue o PDF preenchido do Curso de Noivos.",
+      //text: "Segue o PDF preenchido do Curso de Noivos.",
     });
     // downloadStatus.textContent = "Compartilhamento concluído.";
     downloadStatus.style.color = "var(--primary)";
